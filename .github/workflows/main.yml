@@ -16,6 +16,5 @@ jobs:
           username: ${{ secrets.SERVER_USERNAME }}
           password: ${{ secrets.SERVER_PASSWORD }}
           script: |
-            su -
-            ${{ secrets.SERVER_ROOT }}
-            cd ${{ secrets.PROJECT_PATH }} && git pull
+            cd ${{ secrets.PROJECT_PATH }}
+            echo "${{ secrets.SERVER_ROOT }}" | sudo -S git pull
