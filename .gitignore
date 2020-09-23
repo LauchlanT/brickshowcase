@@ -1,0 +1,2 @@
+# Ignore file with database password
+helpers/connection.php

@@ -1,0 +1,3 @@
+<?php
+
+//Display the frontpage
