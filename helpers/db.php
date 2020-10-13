@@ -108,6 +108,7 @@ class DatabaseAccessor {
 	public function createUser($username, $email, $password) {
 		//Do password hashing/salting outside transaction for speed
 		$hashword = password_hash($password, PASSWORD_DEFAULT);
+		$userId = -1;
 		//Transaction to check user validity and create if possible
 		if ($this->pdo->beginTransaction()) {
 			//Check if username is in use (case insensitive) (ensure database collation is case insensitive, not bin)
@@ -144,20 +145,18 @@ class DatabaseAccessor {
 				$this->pdo->rollBack();
 				return new ReturnMessage(true, "Error creating user, please try again");
 			}
+			$userId = $this->pdo->lastInsertId();
 			if (!$this->pdo->commit()) {
 				return new ReturnMessage(true, "Error committing transaction to add new user to database");
 			}
 		} else {
 			return new ReturnMessage(true, "Error starting transaction to create user");
 		}
-		//Get and return userId as message with error false, or if transaction failed return error and message
-		$stmt5 = $this->pdo->prepare("SELECT `userid` FROM `users` WHERE `email` = :email LIMIT 1");
-		$stmt5->bindParam(":email", $email);
-		$stmt5->execute();
-		if ($row = $stmt->fetch()) {
-			return new ReturnMessage(false, $row['userid']);
+		//Return userId as message with error false, or if transaction failed return error and message
+		if ($userId > 0) {
+			return new ReturnMessage(false, $userId);
 		} else {
-			return new ReturnMessage(true, "User may have been created but could not access id");
+			return new ReturnMessage(true, "Failure to access user id");
 		}
 	}
 	
