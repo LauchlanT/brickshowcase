@@ -10,3 +10,9 @@
 //home.php/groups?page=1&sort=joined&reverse=false (joined, created, members, mocs, comments, name)
 //Display settings
 //home.php/settings
+
+//Test
+include_once("../helpers/error.php");
+include_once("../helpers/auth.php");
+echo authenticate();
+?>
