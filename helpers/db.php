@@ -107,7 +107,7 @@ class DatabaseAccessor {
 	//Create a new user, used in user.php
 	public function createUser($username, $email, $password) {
 		//Do password hashing/salting outside transaction for speed
-		$hashword = password_hash($password);
+		$hashword = password_hash($password, PASSWORD_DEFAULT);
 		//Transaction to check user validity and create if possible
 		if ($this->pdo->beginTransaction()) {
 			//Check if username is in use (case insensitive) (ensure database collation is case insensitive, not bin)
@@ -132,8 +132,8 @@ class DatabaseAccessor {
 				return new ReturnMessage(true, "Email is already in use.");
 			}
 			//Add username to usernames table and user to users table
-			$stmt3 = $this->pdo->prepare("INSERT INTO `usernames` (`username`) VALUES (:username) LIMIT 1");
-			$stmt4 = $this->pdo->prepare("INSERT INTO `users` (`username`, `email`, `usericon`, `password`, `description`, `joindate`, `status`) VALUES (:username, :email, 'default.jpg', :password, 'Welcome to my homepage!', NOW(), 2) LIMIT 1");
+			$stmt3 = $this->pdo->prepare("INSERT INTO `usernames` (`username`) VALUES (:username)");
+			$stmt4 = $this->pdo->prepare("INSERT INTO `users` (`username`, `email`, `usericon`, `password`, `description`, `joindate`, `status`) VALUES (:username, :email, 'default.jpg', :password, 'Welcome to my homepage!', NOW(), 2)");
 			$stmt3->bindParam(":username", $username);
 			$stmt4->bindParam(":username", $username);
 			$stmt4->bindParam(":email", $email);
@@ -164,7 +164,7 @@ class DatabaseAccessor {
 	//Store a verification code to activate a new account, used in user.php
 	public function addVerificationCode($verificationCode, $userId, $expiry) {
 		//Add verification code to database
-		$stmt = $this->pdo->prepare("INSERT INTO `verificationcodes` (`verificationcode`, `userid`, `expiry`) VALUES (:verificationcode, :userid, :expiry) LIMIT 1");
+		$stmt = $this->pdo->prepare("INSERT INTO `verificationcodes` (`verificationcode`, `userid`, `expiry`) VALUES (:verificationcode, :userid, :expiry)");
 		$stmt->bindParam(":verificationcode", $verificationCode);
 		$stmt->bindParam(":userid", $userId);
 		$stmt->bindParam(":expiry", $expiry);

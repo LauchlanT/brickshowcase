@@ -78,7 +78,7 @@ function validateUsername($username) {
 	}
 	//Check if there's leading or trailing whitespace, null bytes, tabs, newlines, returns, nul-bytes, or duplicate whitespace
 	$stripped = trim($username);
-	$stripped = preg_replace("/[^a-zA-z0-9\s-_=+!@#$%^&*()?><,.'\"`~]/", "", $stripped);
+	$stripped = preg_replace("/[^a-zA-z0-9\s\-_=+!@#$%^&*()?><,.'\"`~]/", "", $stripped);
 	$stripped = preg_replace("/\s/", " ", $stripped);
 	$stripped = preg_replace("/\s\s+/", " ", $stripped);
 	if ($stripped !== $username) {
