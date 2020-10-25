@@ -14,5 +14,5 @@
 //Test
 include_once("../helpers/error.php");
 include_once("../helpers/auth.php");
-echo authenticate();
+echo authenticate() ? "Logged In!" : "Not Logged In";
 ?>

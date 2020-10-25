@@ -30,11 +30,11 @@ function login($email, $password) {
 	if ($userData === null) {
 		return errorBuilder("This user could not be found");
 	}
-	if (!password_verify($password, $userData->password)) {
-		return errorBuilder("Incorrect password");
-	}
 	if ($userData->status === 0 || $userData->status === 2) {
 		return errorBuilder("This account is not currently activated");
+	}
+	if (!password_verify($password, $userData->password)) {
+		return errorBuilder("Incorrect password");
 	}
 	//Create session and cookie (set cookie and in db)
 	//In future, add option for user to select expiry duration and if they don't want non-session cookie
@@ -147,7 +147,7 @@ function register($username, $email, $password, $passwordConfirm) {
 
   Thank you for signing up to MOCShare, $username!
 
-  Please click this link to activate your account: https://www.mocshare.com/verify.php/account/$verificationCode
+  Please click this link to activate your account: https://www.$configRootDomain/verify.php/account/$verificationCode
 
   If you did not wish to create an account, click \"Cancel Registration\" after following the link above.
 
@@ -209,7 +209,7 @@ function resendVerification($email) {
 
   Thank you for signing up to MOCShare!
 
-  Please click this link to activate your account: https://www.mocshare.com/verify.php/account/$verificationCode
+  Please click this link to activate your account: https://www.$configRootDomain/verify.php/account/$verificationCode
 
   If you did not wish to create an account, click \"Cancel Registration\" after following the link above.
 

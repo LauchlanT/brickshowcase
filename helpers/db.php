@@ -231,6 +231,7 @@ class DatabaseAccessor {
 			$user->userid = $row['userid'];
 			$user->username = $row['username'];
 			$user->email = $row['email'];
+			$user->password = $row['password'];
 			$user->status = $row['status'];
 			return $user;
 		} else {
