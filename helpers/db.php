@@ -228,7 +228,7 @@ class DatabaseAccessor {
 		//Return user object, or null if not found
 		if ($row = $stmt->fetch()) {
 			$user = new User();
-			$user->userid = $row['userid'];
+			$user->userId = $row['userid'];
 			$user->username = $row['username'];
 			$user->email = $row['email'];
 			$user->password = $row['password'];
