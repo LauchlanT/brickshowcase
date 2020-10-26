@@ -250,17 +250,68 @@ function cancelRegistration($code) {
 
 function requestPasswordReset($email) {
 	//Check if users exists with this email, and that they're approved
+	//Verify that user isn't already logged in
+	$userId = authenticate();
+	if ($userId !== null) {
+		return errorBuilder("You are already logged in");
+	}
+	//Check if credentials are valid for non pending non deleted user
+	$db = new DatabaseAccessor();
+	$userData = $db->getUserByEmail($email);
+	if ($userData === null) {
+		return errorBuilder("This user could not be found");
+	}
+	if ($userData->status === 0 || $userData->status === 2) {
+		return errorBuilder("This account is not currently activated");
+	}
 	//Generate verification code, store in database, send email
+	$rawBytes = random_bytes(60);
+	$verificationCode = md5($rawBytes); //Just to convert to URL safe characters
+	if (!$db->addVerificationCode($verificationCode, $user->userId, time() + 3600)) {
+		return errorBuilder("Error sending verification code, please request a new password reset");
+	}
+	$to = $email;
+  $subject = "MOCShare Password Reset Request";
+  $message = "
+  Please click this link to set your new password: https://www.$configRootDomain/verify.php/password/$verificationCode
+
+  This link is valid for one hour - you can request another reset if it expires.
+
+  ";
+  $headers = "From:registration@$configRootDomain\r\n";
+  mail($to,$subject,$message,$headers);
 	//Return status of request
+	return resultBuilder("Password reset link sent to $email");
 }
 
 function verifyPasswordReset($code, $password, $passwordConfirm) {
-	//Check that passwords match and are at least one character
+	//Verify user isn't already logged in
+	if (authenticate() !== null) {
+		return errorBuilder("You are already logged in");
+	}
+	//Check that password is acceptable and matches
+	if (validatePassword($password, $passwordConfirm) != null) {
+		return validatePassword($password, $passwordConfirm);
+	}
 	//Get database entry for verification code
+	$db = new DatabaseAccessor();
+	$verificationRecord = $db->getVerificationRecord($code);
+	if ($verificationRecord === null) {
+		return errorBuilder("This reset code does not exist anymore, but you can request a new password reset email");
+	}
 	//Check that it's not expired (if it is, delete)
+	if ($verificationRecord->expiry < time()) {
+		$db->deleteVerificationRecord($code);
+		return errorBuilder("This reset code has expired, you can request a new password reset email however");
+	}
 	//Set user's password to hashed/salted version of password
+	if (!$db->setPassword($verificationRecord->userId, $password)) {
+		return errorBuilder("There was an error resetting the password, please try again or request a new reset code");
+	}
 	//Delete verification record
+	$db->deleteVerificationRecord($code);
 	//Return status of reset
+	return resultBuilder("Password updated successfully!");
 }
 
 function deleteAccount($password) {
@@ -271,34 +322,127 @@ function deleteAccount($password) {
 
 function changeEmail($password, $newEmail) {
 	//Verify user is logged in
+	$userId = authenticate();
+	if ($userId === null) {
+		return errorBuilder("You must be logged in to change your email");
+	}
+	//Verify email is valid
+	if (validateEmail($newEmail) !== null) {
+		return validateEmail($newEmail);
+	}
 	//Verify password is correct
+	$db = new DatabaseAccessor();
+	if (!$db->verifyPassword($userId, $password)) {
+		return errorBuilder("The password is not correct");
+	}
+	//Check that email is not in use
+	if ($db->getUserByEmail($newEmail) !== null) {
+		return errorBuilder("There is already an account using this email");
+	}
 	//Generate verification code, store in database, send email containing url with code and email
+	$rawBytes = random_bytes(60);
+	$verificationCode = md5($rawBytes); //Just to convert to URL safe characters
+	$verificationCode .= "&&".urlencode($newEmail);
+	if (!$db->addVerificationCode($verificationCode, $user->userId, time() + 3600)) {
+		return errorBuilder("Error sending verification code, please try again");
+	}
+	$to = $newEmail;
+  $subject = "MOCShare Email Change Request";
+  $message = "
+  Please click this link to verify your new email: https://www.$configRootDomain/verify.php/email/$verificationCode
+
+  This link is valid for one hour - you can make another request if it expires.
+
+  ";
+  $headers = "From:registration@$configRootDomain\r\n";
+  mail($to,$subject,$message,$headers);
 	//Return status of change request
+	return resultBuilder("Email update request sent, please check your new email account for a verification email.");
 }
 
-function verifyChangeEmail($code, $newEmail, $password) {
+function verifyChangeEmail($code, $password) {
+	//Get email from code
+	$codeParts = explode("&&", $code);
+	if (count($codeParts > 2) {
+		return errorBuilder("Sorry, but email addresses containing '&&' are not currently supported. Please email 'lauchlantoal@gmail.com' to request manual intervention.");
+	}
+	$newEmail = urldecode($codeParts[1]);
+	//Check that email is acceptable
+	if (validateEmail($newEmail) != null) {
+		return validateEmail($newEmail);
+	}
 	//Get database entry for verification code
+	$db = new DatabaseAccessor();
+	$verificationRecord = $db->getVerificationRecord($code);
+	if ($verificationRecord === null) {
+		return errorBuilder("This reset code does not exist anymore, but you can request a new email change");
+	}
 	//Check that it's not expired (if it is, delete)
-	//Verify password is correct
-	//Set user's email to new email
+	if ($verificationRecord->expiry < time()) {
+		$db->deleteVerificationRecord($code);
+		return errorBuilder("This code has expired, you can request a new email change however");
+	}
+	//Check that password is correct for this user
+	if (!$db->verifyPassword($verificationRecord->userId, $password)) {
+		return errorBuilder("The password is not correct");
+	}
+	//Check that email is not in use
+	if ($db->getUserByEmail($newEmail) !== null) {
+		return errorBuilder("There is already an account using this email");
+	}
+	//Set user's email
+	if (!$db->setEmail($verificationRecord->userId, $newEmail)) {
+		return errorBuilder("There was an error changing the email, please try again");
+	}
 	//Delete verification record
-	//Return status of change
+	$db->deleteVerificationRecord($code);
+	//Return status of reset
+	return resultBuilder("Email updated successfully!");
 }
 
 function changePassword($password, $newPassword, $newPasswordConfirm) {
 	//Verify user is logged in
+	$userId = authenticate();
+	if ($userId === null) {
+		return errorBuilder("You must be logged in to change your password");
+	}
 	//Verify passwords match and are at least one character
+	if (validatePassword($newPassword, $newPasswordConfirm) != null) {
+		return validatePassword($newPassword, $newPasswordConfirm);
+	}
 	//Verify current password is correct
+	if (!$db->verifyPassword($userId, $password)) {
+		return errorBuilder("The password is not correct");
+	}
 	//Update user password to hashed/salted new password
+	if (!$db->setPassword($userId, $newPassword)) {
+		return errorBuilder("There was an error resetting the password, please try again or request a new reset code");
+	}
 	//Return status of change
+	return resultBuilder("Password updated successfully!");
 }
 
 function changeUsername($password, $newUsername) {
 	//Verify user is logged in
-	//Verify username is valid character set
+	$userId = authenticate();
+	if ($userId === null) {
+		return errorBuilder("You must be logged in to change your username");
+	}
+	//Verify username is valid
+	if (validateUsername($username) != null) {
+		return validateUsername($username);
+	}
 	//Verify password is correct
+	if (!$db->verifyPassword($userId, $password)) {
+		return errorBuilder("The password is not correct");
+	}
 	//Try to update current username to new username in username table
+	$result = $db->setUsername($userId, $newUsername)
+	if ($result->error) {
+		return errorBuilder($result->message);
+	}
 	//Return status of change
+	return resultBuilder("Username updated successfully!");
 }
 
 //Parse input JSON and pass to appropriate functions
@@ -385,10 +529,10 @@ function parseJSON($json) {
 			break;
 		
 		case "verifyChangeEmail":
-			if (isset($data->code) && isset($data->newEmail) && isset($password)) {
-				return verifyChangeEmail($data->code, $data->newEmail, $data->password);
+			if (isset($data->code) && isset($password)) {
+				return verifyChangeEmail($data->code, $data->password);
 			} else {
-				return '{"result":null, "error":"Verification code, new email, and password must be sent to change email"}';
+				return '{"result":null, "error":"Verification code and password must be sent to change email"}';
 			}
 			break;
 		

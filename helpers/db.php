@@ -239,6 +239,99 @@ class DatabaseAccessor {
 		}
 	}
 	
+	//Salt/hash password and store in db for user, used in user.php
+	public function setPassword($userId, $password) {
+		//Calculate hash to store
+		$hashword = password_hash($password, PASSWORD_DEFAULT);
+		//Set password
+		$stmt = $this->pdo->prepare("UPDATE `users` SET `password` = :password WHERE `userid` = :userid LIMIT 1");
+		$stmt->bindParam(":password", $hashword);
+		$stmt->bindParam(":userid", $userId);
+		//Return true on success else false
+		return $stmt->execute();
+	}
+	
+	//Return if password matches user's password, used in user.php
+	public function verifyPassword($userId, $password) {
+		//Get the password for the user
+		$stmt = $this->pdo->prepare("SELECT `password` FROM `users` WHERE `userid` = :userid LIMIT 1");
+		$stmt->bindParam(":userid", $userId);
+		if ($stmt->execute()) {
+			if ($row = $stmt->fetch()) {
+				return password_verify($password, $row['password']);
+			} else {
+				return false;
+			}
+		} else {
+			return false;
+		}
+	}
+	
+	//Set email address for user, used in user.php
+	public function setEmail($userId, $email) {
+		//Set email
+		$stmt = $this->pdo->prepare("UPDATE `users` SET `email` = :email WHERE `userid` = :userid LIMIT 1");
+		$stmt->bindParam(":email", $email);
+		$stmt->bindParam(":userid", $userId);
+		//Return true on success else false
+		return $stmt->execute();
+	}
+	
+	//Set username, in transaction, used in user.php
+	public function setUsername($userId, $username) {
+		//Transaction to check username validity and change if possible
+		if ($this->pdo->beginTransaction()) {
+			//Check if username is in use (case insensitive) (ensure database collation is case insensitive, not bin)
+			$stmt = $this->pdo->prepare("SELECT `username` FROM `usernames` WHERE `username` = :username LIMIT 1");
+			$stmt->bindParam(":username", $username);
+			$stmt->execute();
+			//If username is in use, abort and return message stating such
+			if ($stmt->rowCount() === 1) {
+				$this->pdo->rollBack();
+				return new ReturnMessage(true, "Username is already in use.");
+			}
+			//Add username to usernames table and get current username of user
+			$stmt2 = $this->pdo->prepare("INSERT INTO `usernames` (`username`) VALUES (:username)");
+			$stmt3 = $this->pdo->prepare("SELECT `username` FROM `users` WHERE `userid` = :userid LIMIT 1");
+			$stmt2->bindParam(":username", $username);
+			$stmt3->bindParam(":userid", $userId);
+			if (!$stmt2->execute()) {
+				$this->pdo->rollBack();
+				return new ReturnMessage(true, "Error inserting new username, please try again.");
+			}
+			$stmt3->execute();
+			$oldUsername = "";
+			if ($row = $stmt3->fetch()) {
+				$oldUsername = $row['username'];
+			} else {
+				$this->pdo->rollBack();
+				return new ReturnMessage(true, "Error getting current username, please try again.");
+			}
+			//Change the user's username to the new username
+			$stmt4 = $this->pdo->prepare("UPDATE `users` SET `username` = :username WHERE `userid` = :userid LIMIT 1");
+			$stmt4->bindParam(":username", $username);
+			$stmt4->bindParam(":userid", $userId);
+			if (!$stmt4->execute()) {
+				$this->pdo->rollBack();
+				return new ReturnMessage(true, "Error updating username, please try again.");
+			}
+			//Delete the old username from the usernames table
+			$stmt5 = $this->pdo->prepare("DELETE FROM `usernames` WHERE `username` = :username LIMIT 1");
+			$stmt5->bindParam(":username", $oldUsername);
+			if (!$stmt5->execute()){
+				$this->pdo->rollBack();
+				return new ReturnMessage(true, "Error removing old username, please try again.");
+			}
+			if (!$this->pdo->commit()) {
+				return new ReturnMessage(true, "Error committing transaction to change username.");
+			}
+		} else {
+			return new ReturnMessage(true, "Error starting transaction to create user");
+		}
+		//Return no error if successful
+		return new ReturnMessage(false, "Username updated successfully");
+	}
+	
 	public function deleteUser($userId) {
 		//TODO
 	}
