@@ -411,6 +411,7 @@ function changePassword($password, $newPassword, $newPasswordConfirm) {
 		return validatePassword($newPassword, $newPasswordConfirm);
 	}
 	//Verify current password is correct
+	$db = new DatabaseAccessor();
 	if (!$db->verifyPassword($userId, $password)) {
 		return errorBuilder("The password is not correct");
 	}
@@ -433,6 +434,7 @@ function changeUsername($password, $newUsername) {
 		return validateUsername($username);
 	}
 	//Verify password is correct
+	$db = new DatabaseAccessor();
 	if (!$db->verifyPassword($userId, $password)) {
 		return errorBuilder("The password is not correct");
 	}
