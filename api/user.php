@@ -343,7 +343,7 @@ function changeEmail($password, $newEmail) {
 	$rawBytes = random_bytes(60);
 	$verificationCode = md5($rawBytes); //Just to convert to URL safe characters
 	$verificationCode .= "&&".urlencode($newEmail);
-	if (!$db->addVerificationCode($verificationCode, $user->userId, time() + 3600)) {
+	if (!$db->addVerificationCode($verificationCode, $userId, time() + 3600)) {
 		return errorBuilder("Error sending verification code, please try again");
 	}
 	$to = $newEmail;
