@@ -529,7 +529,7 @@ function parseJSON($json) {
 			break;
 		
 		case "verifyChangeEmail":
-			if (isset($data->code) && isset($password)) {
+			if (isset($data->code) && isset($data->password)) {
 				return verifyChangeEmail($data->code, $data->password);
 			} else {
 				return '{"result":null, "error":"Verification code and password must be sent to change email"}';
