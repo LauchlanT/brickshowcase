@@ -363,7 +363,7 @@ function changeEmail($password, $newEmail) {
 function verifyChangeEmail($code, $password) {
 	//Get email from code
 	$codeParts = explode("&&", $code);
-	if (count($codeParts > 2)) {
+	if (count($codeParts) > 2) {
 		return errorBuilder("Sorry, but email addresses containing '&&' are not currently supported. Please email 'lauchlantoal@gmail.com' to request manual intervention.");
 	}
 	$newEmail = urldecode($codeParts[1]);
