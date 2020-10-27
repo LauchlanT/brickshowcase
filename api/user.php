@@ -363,7 +363,7 @@ function changeEmail($password, $newEmail) {
 function verifyChangeEmail($code, $password) {
 	//Get email from code
 	$codeParts = explode("&&", $code);
-	if (count($codeParts > 2) {
+	if (count($codeParts > 2)) {
 		return errorBuilder("Sorry, but email addresses containing '&&' are not currently supported. Please email 'lauchlantoal@gmail.com' to request manual intervention.");
 	}
 	$newEmail = urldecode($codeParts[1]);
@@ -437,7 +437,7 @@ function changeUsername($password, $newUsername) {
 		return errorBuilder("The password is not correct");
 	}
 	//Try to update current username to new username in username table
-	$result = $db->setUsername($userId, $newUsername)
+	$result = $db->setUsername($userId, $newUsername);
 	if ($result->error) {
 		return errorBuilder($result->message);
 	}
