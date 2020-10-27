@@ -497,6 +497,14 @@ function parseJSON($json) {
 				return '{"result":null, "error":"Email to send verification code to must be input"}';
 			}
 			break;
+			
+		case "cancelRegistration":
+			if (isset($data->verificationCode)) {
+				return cancelRegistration($data->verificationCode);
+			} else {
+				return '{"result":null, "error":"Verification code must be sent"}';
+			}
+			break;
 		
 		case "requestPasswordReset":
 			if (isset($data->email)) {
