@@ -5,5 +5,6 @@
 	error_reporting(E_ALL);*/
 	
 	//Adjust this between staging and main
+	global $configRootDomain;
 	$configRootDomain = "brickshowcase.com";
 ?>

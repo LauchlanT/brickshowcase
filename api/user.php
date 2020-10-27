@@ -40,7 +40,7 @@ function login($email, $password) {
 	//In future, add option for user to select expiry duration and if they don't want non-session cookie
 	$_SESSION['userId'] = $userData->userId;
 	$_SESSION['expiry'] = time() + 7200;
-	setcookie("sessionId",session_id(),time() + 7200,"/",$configRootDomain,true,true);
+	setcookie("sessionId",session_id(),time() + 7200,"/",$GLOBALS['configRootDomain'],true,true);
 	if (!$db->createSession(session_id(), $userData->userId, time() + 7200)) {
 		session_destroy();
 		unset($_COOKIE['sessionId']); //Just to clear the variable here
@@ -147,12 +147,12 @@ function register($username, $email, $password, $passwordConfirm) {
 
   Thank you for signing up to MOCShare, $username!
 
-  Please click this link to activate your account: https://www.$configRootDomain/verify.php/account/$verificationCode
+  Please click this link to activate your account: https://www.$GLOBALS['configRootDomain']/verify.php/account/$verificationCode
 
   If you did not wish to create an account, click \"Cancel Registration\" after following the link above.
 
   ";
-  $headers = "From:registration@$configRootDomain\r\n";
+  $headers = "From:registration@$GLOBALS['configRootDomain']\r\n";
   mail($to,$subject,$message,$headers);
 	//Return status of registration
 	return resultBuilder("Registration successful, verification email sent to $email");
@@ -209,12 +209,12 @@ function resendVerification($email) {
 
   Thank you for signing up to MOCShare!
 
-  Please click this link to activate your account: https://www.$configRootDomain/verify.php/account/$verificationCode
+  Please click this link to activate your account: https://www.$GLOBALS['configRootDomain']/verify.php/account/$verificationCode
 
   If you did not wish to create an account, click \"Cancel Registration\" after following the link above.
 
   ";
-  $headers = "From:registration@$configRootDomain\r\n";
+  $headers = "From:registration@$GLOBALS['configRootDomain']\r\n";
   mail($to,$subject,$message,$headers);
 	//Return status of resend
 	return resultBuilder("New verification code sent to $email");
@@ -273,12 +273,12 @@ function requestPasswordReset($email) {
 	$to = $email;
   $subject = "MOCShare Password Reset Request";
   $message = "
-  Please click this link to set your new password: https://www.$configRootDomain/verify.php/password/$verificationCode
+  Please click this link to set your new password: https://www.$GLOBALS['configRootDomain']/verify.php/password/$verificationCode
 
   This link is valid for one hour - you can request another reset if it expires.
 
   ";
-  $headers = "From:registration@$configRootDomain\r\n";
+  $headers = "From:registration@$GLOBALS['configRootDomain']\r\n";
   mail($to,$subject,$message,$headers);
 	//Return status of request
 	return resultBuilder("Password reset link sent to $email");
@@ -349,12 +349,12 @@ function changeEmail($password, $newEmail) {
 	$to = $newEmail;
   $subject = "MOCShare Email Change Request";
   $message = "
-  Please click this link to verify your new email: https://www.$configRootDomain/verify.php/email/$verificationCode
+  Please click this link to verify your new email: https://www.$GLOBALS['configRootDomain']/verify.php/email/$verificationCode
 
   This link is valid for one hour - you can make another request if it expires.
 
   ";
-  $headers = "From:registration@$configRootDomain\r\n";
+  $headers = "From:registration@$GLOBALS['configRootDomain']\r\n";
   mail($to,$subject,$message,$headers);
 	//Return status of change request
 	return resultBuilder("Email update request sent, please check your new email account for a verification email.");
