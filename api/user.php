@@ -267,7 +267,7 @@ function requestPasswordReset($email) {
 	//Generate verification code, store in database, send email
 	$rawBytes = random_bytes(60);
 	$verificationCode = md5($rawBytes); //Just to convert to URL safe characters
-	if (!$db->addVerificationCode($verificationCode, $user->userId, time() + 3600)) {
+	if (!$db->addVerificationCode($verificationCode, $userData->userId, time() + 3600)) {
 		return errorBuilder("Error sending verification code, please request a new password reset");
 	}
 	$to = $email;
