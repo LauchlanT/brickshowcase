@@ -239,11 +239,12 @@ function cancelRegistration($code) {
 		return errorBuilder("This verification code is for a user that is not pending verification");
 	}
 	//Delete user and username
-	if (!$db->deleteUser($verificationRecord->userId)) {
-		return errorBuilder("There was an error attempting to cancel this account, please try again");
+	$result = $db->deleteUser($verificationRecord->userId);
+	if ($result->error) {
+		return $result->message;
 	}
-	//Delete verification record
-	$db->deleteVerificationRecord($code);
+	//Delete verification record (should be done by deleteUser)
+	//$db->deleteVerificationRecord($code);
 	//Return status of verification cancellation
 	return resultBuilder("Registration cancellation successful, all account details deleted");
 }

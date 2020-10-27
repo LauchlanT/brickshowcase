@@ -333,7 +333,88 @@ class DatabaseAccessor {
 	}
 	
 	public function deleteUser($userId) {
-		//TODO
+		//TODO - as tables are added, ensure deleteuser deletes from them appropriately
+		if ($this->pdo->beginTransaction()) {
+			//Disable safe mode so that non-primary keys can be used to select rows to delete
+			$disableSafe = $this->pdo->prepare("SET SQL_SAFE_UPDATES = 0");
+			if (!$disableSafe->execute()) {
+				$this->pdo->rollBack();
+				return new ReturnMessage(true, "Error preparing deletion, please try again.");
+			}
+			//Delete anything that should be deleted
+			$stmt = $this->pdo->prepare("DELETE FROM `sessions` WHERE `userid` = :userid");
+			$stmt2 = $this->pdo->prepare("DELETE FROM `verificationcodes` WHERE `userid` = :userid");
+			$stmt->bindParam(":userid", $userId);
+			$stmt2->bindParam(":userid", $userId);
+			$stmtResult = $stmt->execute();
+			$stmt2Result = $stmt2->execute();
+			if (!($stmtResult && $stmt2Result)) {
+				$this->pdo->rollBack();
+				return new ReturnMessage(true, "Error deleting user data, please try again.");
+			}
+			//Create new DeletedUser username and get original username
+			$stmt3 = $this->pdo->prepare("SELECT `username` FROM `usernames` LIKE 'DeletedUser%' ORDER BY `username` DESC LIMIT 1");
+			$stmt4 = $this->pdo->prepare("SELECT `username`, `email` FROM `users` WHERE `userid` = :userid LIMIT 1");
+			$stmt4->bindParam(":userid", $userId);
+			$stmt3->execute();
+			$stmt4->execute();
+			$latestDeleted = "DeletedUser0";
+			$row = $stmt3->fetch();
+			if ($row === false) {
+				$this->pdo->rollBack();
+				return new ReturnMessage(true, "Error deleting username, please try again.");
+			} else if ($row) {
+				$latestDeleted = $row['username'];
+			}
+			$originalUsername = "";
+			$originalEmail = "";
+			if ($row = $stmt4->fetch()) {
+				$originalUsername = $row['username'];
+				$originalEmail = $row['email'];
+			} else {
+				$this->pdo->rollBack();
+				return new ReturnMessage(true, "Error accessing user to delete, please try again.");
+			}
+			//Calculate next number for this deleted user
+			$userNumber = intval(substr($latestDeleted, 11));
+			$userNumber += 1;
+			$newDeleted = "DeletedUser".$userNumber;
+			$stmt5 = $this->pdo->prepare("INSERT INTO `usernames` (`username`) VALUES (:username)");
+			$stmt5->bindParam(":username", $newDeleted);
+			if (!$stmt5->execute()) {
+				$this->pdo->rollBack();
+				return new ReturnMessage(true, "Error with username deletion, please try again.");
+			}
+			//Update user info
+			$stmt6 = $this->pdo-prepare("UPDATE `users` SET `username` = :username, `email` = :email, `usericon` = 'default.jpg', `password` = NULL, `description` = 'Deleted Account', `status` = 0 WHERE `userid` = :userid LIMIT 1");
+			$stmt6->bindParam(":username", $newDeleted);
+			$stmt6->bindParam(":email", "DeletedUser&&".$originalEmail);
+			$stmt6->bindParam(":userid", $userId);
+			if (!$stmt6->execute()) {
+				$this->pdo->rollBack();
+				return new ReturnMessage(true, "Error with user deletion, please try again.");
+			}
+			//Remove old username from username list
+			$stmt7 = $this->pdo->prepare("DELETE FROM `usernames` WHERE `username` = :username LIMIT 1");
+			$stmt7->bindParam(":username", $originalUsername);
+			if (!$stmt7->execute()){
+				$this->pdo->rollBack();
+				return new ReturnMessage(true, "Error deleting current username, please try again.");
+			}
+			//Re-enable safe mode
+			$enableSafe = $this->pdo->prepare("SET SQL_SAFE_UPDATES = 1;");
+			if (!$enableSafe->execute()) {
+				$this->pdo->rollBack();
+				return new ReturnMessage(true, "Error completing deletion, please try again.");
+			}
+			if (!$this->pdo->commit()) {
+				return new ReturnMessage(true, "Error committing transaction to delete user, please try again.");
+			}
+		} else {
+			return new ReturnMessage(true, "Error starting transaction to delete user");
+		}
+		//Return no error if successful
+		return new ReturnMessage(false, "User deleted successfully");
 	}
 	
 }
