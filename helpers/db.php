@@ -384,7 +384,8 @@ class DatabaseAccessor {
 			//Update user info
 			$stmt6 = $this->pdo->prepare("UPDATE `users` SET `username` = :username, `email` = :email, `usericon` = 'default.jpg', `password` = NULL, `description` = 'Deleted Account', `status` = 0 WHERE `userid` = :userid LIMIT 1");
 			$stmt6->bindParam(":username", $newDeleted);
-			$stmt6->bindParam(":email", "DeletedUser&&".$originalEmail);
+			$deletedEmail = "DeletedUser&&".$originalEmail;
+			$stmt6->bindParam(":email", $deletedEmail);
 			$stmt6->bindParam(":userid", $userId);
 			if (!$stmt6->execute()) {
 				$this->pdo->rollBack();
