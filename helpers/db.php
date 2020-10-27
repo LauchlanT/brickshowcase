@@ -353,7 +353,7 @@ class DatabaseAccessor {
 				return new ReturnMessage(true, "Error deleting user data, please try again.");
 			}
 			//Create new DeletedUser username and get original username
-			$stmt3 = $this->pdo->prepare("SELECT `username` FROM `usernames` LIKE 'DeletedUser%' ORDER BY `username` DESC LIMIT 1");
+			$stmt3 = $this->pdo->prepare("SELECT `username` FROM `usernames` WHERE `username` LIKE 'DeletedUser%' ORDER BY `username` DESC LIMIT 1");
 			$stmt4 = $this->pdo->prepare("SELECT `username`, `email` FROM `users` WHERE `userid` = :userid LIMIT 1");
 			$stmt4->bindParam(":userid", $userId);
 			$stmt3->execute();
