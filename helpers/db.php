@@ -359,11 +359,7 @@ class DatabaseAccessor {
 			$stmt3->execute();
 			$stmt4->execute();
 			$latestDeleted = "DeletedUser0";
-			$row = $stmt3->fetch();
-			if ($row === false) {
-				$this->pdo->rollBack();
-				return new ReturnMessage(true, "Error deleting username, please try again.");
-			} else if ($row) {
+			if ($row = $stmt3->fetch()) {
 				$latestDeleted = $row['username'];
 			}
 			$originalUsername = "";
