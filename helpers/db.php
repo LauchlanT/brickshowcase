@@ -382,7 +382,7 @@ class DatabaseAccessor {
 				return new ReturnMessage(true, "Error with username deletion, please try again.");
 			}
 			//Update user info
-			$stmt6 = $this->pdo->prepare("UPDATE `users` SET `username` = :username, `email` = :email, `usericon` = 'default.jpg', `password` = NULL, `description` = 'Deleted Account', `status` = 0 WHERE `userid` = :userid LIMIT 1");
+			$stmt6 = $this->pdo->prepare("UPDATE `users` SET `username` = :username, `email` = :email, `usericon` = 'default.jpg', `password` = 'deleted', `description` = 'Deleted Account', `status` = 0 WHERE `userid` = :userid LIMIT 1");
 			$stmt6->bindParam(":username", $newDeleted);
 			$deletedEmail = "DeletedUser&&".$originalEmail;
 			$stmt6->bindParam(":email", $deletedEmail);
