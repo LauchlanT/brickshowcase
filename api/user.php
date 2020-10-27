@@ -430,8 +430,8 @@ function changeUsername($password, $newUsername) {
 		return errorBuilder("You must be logged in to change your username");
 	}
 	//Verify username is valid
-	if (validateUsername($username) != null) {
-		return validateUsername($username);
+	if (validateUsername($newUsername) != null) {
+		return validateUsername($newUsername);
 	}
 	//Verify password is correct
 	$db = new DatabaseAccessor();
