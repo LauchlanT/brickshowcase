@@ -12,6 +12,10 @@ switch ($api) {
 	case "user":
 		include_once("../api/user.php");
 		break;
+		
+	case "moc":
+		include_once("../api/moc.php");
+		break;
 	
 	default:
 		$done = true;

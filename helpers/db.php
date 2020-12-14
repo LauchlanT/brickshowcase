@@ -414,4 +414,169 @@ class DatabaseAccessor {
 		return new ReturnMessage(false, "User deleted successfully");
 	}
 	
+	//TODO: Update MOC SQL calls to ignore deleted MOCs, so users can't like or add comments to them and such
+	
+	//Create MOC, used in moc.php
+	public function createMoc($userId, $mocTitle, $mocText, $mocThumb, $mocPrivacy, $mocFilter) {
+		$stmt = $this->pdo->prepare("INSERT INTO `mocs` (`userid`, `title`, `thumbnail`, `content`, `privacy`, `filter`, `postdate`, `lastedit`, `numcomments`, `numlikes`, `numviews`, `status`) VALUES (:userid, :title, :thumbnail, :content, :privacy, :filter, NOW(), NULL, 0, 0, 0, 1)");
+		$stmt->bindParam(":userid", $userId);
+		$stmt->bindParam(":title", $mocTitle);
+		$stmt->bindParam(":thumbnail", $mocThumb);
+		$stmt->bindParam(":content", $mocText);
+		$stmt->bindParam(":privacy", $mocPrivacy);
+		$stmt->bindParam(":filter", $mocFilter);
+		if ($stmt->execute()) {
+			$mocId = $this->pdo->lastInsertId();
+			return new ReturnMessage(false, "https://www.".$GLOBALS['configRootDomain']."/moc.php/$mocId");
+		} else {
+			return new ReturnMessage(true, "Error posting this MOC, please try again.");
+		}	
+	}
+	
+	//Update existing MOC, used in moc.php
+	public function updateMoc($mocId, $mocTitle, $mocText, $mocThumb, $mocPrivacy, $mocFilter) {
+		$stmt = $this->pdo->prepare("UPDATE `mocs` SET `title` = :title, `thumbnail` = :thumbnail, `content` = :content, `privacy` = :privacy, `filter` = :filter, `lastedit` = NOW() WHERE `mocid` = :mocid");
+		$stmt->bindParam(":title", $mocTitle);
+		$stmt->bindParam(":thumbnail", $mocThumb);
+		$stmt->bindParam(":content", $mocText);
+		$stmt->bindParam(":privacy", $mocPrivacy);
+		$stmt->bindParam(":filter", $mocFilter);
+		$stmt->bindParam(":mocid", $mocId);
+		if ($stmt->execute()) {
+			return new ReturnMessage(false, "MOC successfully updated!");
+		} else {
+			return new ReturnMessage(true, "Error updating this MOC, please try again.");
+		}
+	}
+	
+	//Delete existing MOC, used in moc.php
+	public function deleteMoc($mocId) {
+		//TODO: Consider options other than just setting deleted flag to 0
+		$stmt = $this->pdo->prepare("UPDATE `mocs` SET `status` = 0 WHERE `mocid` = :mocid");
+		$stmt->bindParam(":mocid", $mocId);
+		if ($stmt->execute()) {
+			return new ReturnMessage(false, "MOC successfully deleted!");
+		} else {
+			return new ReturnMessage(true, "Error deleting this MOC, please try again.");
+		}
+	}
+	
+	//Get the user id of the user that posted a MOC, used in moc.php
+	//Return null if moc does not exist or on error
+	public function getMocCreator($mocId) {
+		$stmt = $this->pdo->prepare("SELECT `userid` FROM `mocs` WHERE `mocid` = :mocid");
+		$stmt->bindParam(":mocid", $mocId);
+		if ($stmt->execute()) {
+			if ($row = $stmt->fetch()) {
+				return $row['userid'];
+			} else {
+				return null;
+			}
+		} else {
+			return null;
+		}
+	}
+	
+	//Add a like from given user to given MOC, used in moc.php
+	public function likeMoc($mocId, $userId) {
+		//TODO: Determine what happens if you try to insert duplicate record
+		//Might be a non-issue - valid users shouldn't even be given the option to like if they already have
+		$stmt = $this->pdo->prepare("INSERT INTO `moclikes` (`mocid`, `userid`, `likedate`) VALUES (:mocid, :userid, NOW())");
+		$stmt->bindParam(":mocid", $mocId);
+		$stmt->bindParam(":userid", $userId);
+		if ($stmt->execute()) {
+			return new ReturnMessage(false, "Like added!");
+		} else {
+			return new ReturnMessage(true, "Error adding like.");
+		}
+	}
+	
+	//Remove a like from given user to given MOC, used in moc.php
+	public function unlikeMoc($mocId, $userId) {
+		$stmt = $this->pdo->prepare("DELETE FROM `moclikes` WHERE `mocid` = :mocid AND `userid` = :userid");
+		$stmt->bindParam(":mocid", $mocId);
+		$stmt->bindParam(":userid", $userId);
+		if ($stmt->execute()) {
+			return new ReturnMessage(false, "Like removed!");
+		} else {
+			return new ReturnMessage(true, "Error removing like.");
+		}
+	}
+	
+	//Add a treasure from given user to given MOC, used in moc.php
+	public function treasureMoc($mocId, $userId) {
+		$stmt = $this->pdo->prepare("INSERT INTO `moctreasures` (`mocid`, `userid`, `treasuredate`) VALUES (:mocid, :userid, NOW())");
+		$stmt->bindParam(":mocid", $mocId);
+		$stmt->bindParam(":userid", $userId);
+		if ($stmt->execute()) {
+			return new ReturnMessage(false, "MOC treasured!");
+		} else {
+			return new ReturnMessage(true, "Error treasuring MOC.");
+		}
+	}
+	
+	//Remove a treasure from given user to given MOC, used in moc.php
+	public function untreasureMoc($mocId, $userId) {
+		$stmt = $this->pdo->prepare("DELETE FROM `moctreasures` WHERE `mocid` = :mocid AND `userid` = :userid");
+		$stmt->bindParam(":mocid", $mocId);
+		$stmt->bindParam(":userid", $userId);
+		if ($stmt->execute()) {
+			return new ReturnMessage(false, "MOC untreasured!");
+		} else {
+			return new ReturnMessage(true, "Error untreasuring MOC.");
+		}
+	}
+	
+	//Add a comment to a MOC from the given user, used in moc.php
+	public function postMocComment($mocId, $userId, $commentText) {
+		$stmt = $this->pdo->prepare("INSERT INTO `moccomments` (`mocid`, `userid`, `content`, `postdate`, `status`) VALUES (:mocid, :userid, :content, NOW(), 1)");
+		$stmt->bindParam(":mocid", $mocId);
+		$stmt->bindParam(":userid", $userId);
+		$stmt->bindParam(":content", $commentText);
+		if ($stmt->execute()) {
+			return new ReturnMessage(false, "Comment added!");
+		} else {
+			return new ReturnMessage(true, "Error adding comment.");
+		}
+	}
+	
+	//Edit a comment on a MOC, used in moc.php
+	public function editMocComment($commentId, $commentText) {
+		$stmt = $this->pdo->prepare("UPDATE `moccomments` SET `content` = :content WHERE `commentid` = :commentid");
+		$stmt->bindParam(":content", $commentText);
+		$stmt->bindParam(":commentid", $commentId);
+		if ($stmt->execute()) {
+			return new ReturnMessage(false, "Comment updated!");
+		} else {
+			return new ReturnMessage(true, "Error updating comment.");
+		}
+	}
+	
+	//Delete a comment on a MOC, used in moc.php
+	public function deleteMocComment($commentId) {
+		//TODO: Consider options other than just setting deleted flag to 0
+		$stmt = $this->pdo->prepare("UPDATE `moccomments` SET `status` = 0 WHERE `commentid` = :commentid");
+		$stmt->bindParam(":commentid", $commentId);
+		if ($stmt->execute()) {
+			return new ReturnMessage(false, "Comment successfully deleted!");
+		} else {
+			return new ReturnMessage(true, "Error deleting this comment, please try again.");
+		}
+	}
+	
+	//Get the userid of the creator of a comment on a MOC, used in moc.php
+	public function getMocCommentCreator($commentId) {
+		$stmt = $this->pdo->prepare("SELECT `userid` FROM `moccomments` WHERE `commentid` = :commentid");
+		$stmt->bindParam(":commentid", $commentId);
+		if ($stmt->execute()) {
+			if ($row = $stmt->fetch()) {
+				return $row['userid'];
+			} else {
+				return null;
+			}
+		} else {
+			return null;
+		}
+	}
+	
 }
