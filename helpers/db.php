@@ -477,9 +477,11 @@ class DatabaseAccessor {
 		}
 	}
 	
+	//TODO: Consider updating numlikes and numcomments for MOC in db with each operation
 	//Add a like from given user to given MOC, used in moc.php
 	public function likeMoc($mocId, $userId) {
-		//TODO: Determine what happens if you try to insert duplicate record
+		//TODO: Determine what happens if you try to insert duplicate record - currently silently fails with duplicate primary key constraint violation
+		//Trying to like MOCs that doesn't exist also silently fails - should this also get handled?
 		//Might be a non-issue - valid users shouldn't even be given the option to like if they already have
 		$stmt = $this->pdo->prepare("INSERT INTO `moclikes` (`mocid`, `userid`, `likedate`) VALUES (:mocid, :userid, NOW())");
 		$stmt->bindParam(":mocid", $mocId);
@@ -493,6 +495,7 @@ class DatabaseAccessor {
 	
 	//Remove a like from given user to given MOC, used in moc.php
 	public function unlikeMoc($mocId, $userId) {
+		//TODO: Currently this just acts like it succeeded if the MOC is already not liked - should consider adding a more meaningful message? Could cost performance, and is likely only relevant for byzantine scenarios.
 		$stmt = $this->pdo->prepare("DELETE FROM `moclikes` WHERE `mocid` = :mocid AND `userid` = :userid");
 		$stmt->bindParam(":mocid", $mocId);
 		$stmt->bindParam(":userid", $userId);
@@ -542,7 +545,7 @@ class DatabaseAccessor {
 	
 	//Edit a comment on a MOC, used in moc.php
 	public function editMocComment($commentId, $commentText) {
-		$stmt = $this->pdo->prepare("UPDATE `moccomments` SET `content` = :content WHERE `commentid` = :commentid");
+		$stmt = $this->pdo->prepare("UPDATE `moccomments` SET `content` = :content, `lastedit` = NOW() WHERE `commentid` = :commentid");
 		$stmt->bindParam(":content", $commentText);
 		$stmt->bindParam(":commentid", $commentId);
 		if ($stmt->execute()) {
