@@ -40,7 +40,7 @@ function createMoc($mocTitle, $mocText, $mocThumb, $mocPrivacy, $mocFilter) {
 		return errorBuilder("You must be logged in to post new MOCs");
 	}
 	//Parse all fields for validity
-	if (validateMoc($mocTitle, $mocText, $mocThumb, $mocPrivacy, $mocFilter) === true) {
+	if (validateMoc($mocTitle, $mocText, $mocThumb, $mocPrivacy, $mocFilter) !== true) {
 		return errorBuilder(validateMoc($mocTitle, $mocText, $mocThumb, $mocPrivacy, $mocFilter));
 	}
 	//Parse any special text handling
@@ -70,7 +70,7 @@ function editMoc($mocId, $mocTitle, $mocText, $mocThumb, $mocPrivacy, $mocFilter
 		return errorBuilder("You cannot edit MOCs you did not create");
 	}
 	//Parse all fields for validity
-	if (validateMoc($mocTitle, $mocText, $mocThumb, $mocPrivacy, $mocFilter) === true) {
+	if (validateMoc($mocTitle, $mocText, $mocThumb, $mocPrivacy, $mocFilter) !== true) {
 		return errorBuilder(validateMoc($mocTitle, $mocText, $mocThumb, $mocPrivacy, $mocFilter));
 	}
 	//Parse any special text handling
