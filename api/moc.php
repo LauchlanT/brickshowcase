@@ -17,9 +17,9 @@ function resultBuilder($message) {
 	return '{"result":"'.$message.'", "error":null}';
 }
 
-//Return errorBuilder if any field is invalid, else return resultBuilder
+//Return error string if any field is invalid, else return true
 function validateMoc($title, $text, $thumb, $privacy, $filter) {
-	return resultBuilder("No Errors");
+	return true;
 }
 
 //Return parsed text for MOC for handling markdown
@@ -40,8 +40,8 @@ function createMoc($mocTitle, $mocText, $mocThumb, $mocPrivacy, $mocFilter) {
 		return errorBuilder("You must be logged in to post new MOCs");
 	}
 	//Parse all fields for validity
-	if (validateMoc($mocTitle, $mocText, $mocThumb, $mocPrivacy, $mocFilter)->error != null) {
-		return validateMoc($mocTitle, $mocText, $mocThumb, $mocPrivacy, $mocFilter);
+	if (validateMoc($mocTitle, $mocText, $mocThumb, $mocPrivacy, $mocFilter) === true) {
+		return errorBuilder(validateMoc($mocTitle, $mocText, $mocThumb, $mocPrivacy, $mocFilter));
 	}
 	//Parse any special text handling
 	$mocText = parseMocText($mocText);
@@ -70,8 +70,8 @@ function editMoc($mocId, $mocTitle, $mocText, $mocThumb, $mocPrivacy, $mocFilter
 		return errorBuilder("You cannot edit MOCs you did not create");
 	}
 	//Parse all fields for validity
-	if (validateMoc($mocTitle, $mocText, $mocThumb, $mocPrivacy, $mocFilter)->error != null) {
-		return validateMoc($mocTitle, $mocText, $mocThumb, $mocPrivacy, $mocFilter);
+	if (validateMoc($mocTitle, $mocText, $mocThumb, $mocPrivacy, $mocFilter) === true) {
+		return errorBuilder(validateMoc($mocTitle, $mocText, $mocThumb, $mocPrivacy, $mocFilter));
 	}
 	//Parse any special text handling
 	$mocText = parseMocText($mocText);
@@ -243,6 +243,7 @@ function editComment($commentId, $commentText) {
 		return errorBuilder($commentStatus->message);
 	} else {
 		return resultBuilder($commentStatus->message);
+	}
 }
 
 //Delete comment
@@ -265,6 +266,7 @@ function deleteComment($commentId) {
 		return errorBuilder($commentStatus->message);
 	} else {
 		return resultBuilder($commentStatus->message);
+	}
 }
 
 //Parse input JSON and pass to appropriate functions
@@ -291,7 +293,7 @@ function parseJSON($json) {
 			break;
 		
 		case "editMoc":
-			if (isset($data->mocId), isset($data->title) && isset($data->text) && isset($data->thumb) && isset($data->privacy) && isset($data->filter)) {
+			if (isset($data->mocId) && isset($data->title) && isset($data->text) && isset($data->thumb) && isset($data->privacy) && isset($data->filter)) {
 				return editMoc($data->mocId, $data->title, $data->text, $data->thumb, $data->privacy, $data->filter);
 			} else {
 				return '{"result":null, "error":"mocId, title, text, thumb, privacy, and filter must be sent"}';
