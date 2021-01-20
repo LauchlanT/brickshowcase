@@ -174,7 +174,7 @@ function verifyRegistration($code) {
 		$db->deleteVerificationRecord($code);
 		return errorBuilder("This verification code has expired, you can request a new verification email however");
 	}
-	//Check that user isn't already verified (if they are, delete verification record)
+	//Check that user is pending verification (if they aren't, delete verification record)
 	$userStatus = $db->getUserStatus($verificationRecord->userId);
 	if ($userStatus !== 2) {
 		$db->deleteVerificationRecord($code);
@@ -232,7 +232,7 @@ function cancelRegistration($code) {
 		$db->deleteVerificationRecord($code);
 		return errorBuilder("This verification code has expired, you can request a new verification email however");
 	}
-	//Check that user isn't already verified (if they are, delete verification record)
+	//Check that user is pending verification (if they aren't, delete verification record)
 	$userStatus = $db->getUserStatus($verificationRecord->userId);
 	if ($userStatus !== 2) {
 		$db->deleteVerificationRecord($code);

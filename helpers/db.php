@@ -221,7 +221,7 @@ class DatabaseAccessor {
 	//Get user object, used in user.php
 	public function getUserByEmail($email) {
 		//Find user by email
-		$stmt = $this->pdo->prepare("SELECT * FROM `users` WHERE `email` = :email LIMIT 1");
+		$stmt = $this->pdo->prepare("SELECT * FROM `users` WHERE `email` = :email AND `status` != 0 LIMIT 1");
 		$stmt->bindParam(":email", $email);
 		$stmt->execute();
 		//Build user object, omitting description, joindate, and usericon
@@ -244,7 +244,7 @@ class DatabaseAccessor {
 		//Calculate hash to store
 		$hashword = password_hash($password, PASSWORD_DEFAULT);
 		//Set password
-		$stmt = $this->pdo->prepare("UPDATE `users` SET `password` = :password WHERE `userid` = :userid LIMIT 1");
+		$stmt = $this->pdo->prepare("UPDATE `users` SET `password` = :password WHERE `userid` = :userid AND `status` != 0 LIMIT 1");
 		$stmt->bindParam(":password", $hashword);
 		$stmt->bindParam(":userid", $userId);
 		//Return true on success else false
@@ -254,7 +254,7 @@ class DatabaseAccessor {
 	//Return if password matches user's password, used in user.php
 	public function verifyPassword($userId, $password) {
 		//Get the password for the user
-		$stmt = $this->pdo->prepare("SELECT `password` FROM `users` WHERE `userid` = :userid LIMIT 1");
+		$stmt = $this->pdo->prepare("SELECT `password` FROM `users` WHERE `userid` = :userid AND `status` != 0 LIMIT 1");
 		$stmt->bindParam(":userid", $userId);
 		if ($stmt->execute()) {
 			if ($row = $stmt->fetch()) {
@@ -270,7 +270,7 @@ class DatabaseAccessor {
 	//Set email address for user, used in user.php
 	public function setEmail($userId, $email) {
 		//Set email
-		$stmt = $this->pdo->prepare("UPDATE `users` SET `email` = :email WHERE `userid` = :userid LIMIT 1");
+		$stmt = $this->pdo->prepare("UPDATE `users` SET `email` = :email WHERE `userid` = :userid AND `status` != 0 LIMIT 1");
 		$stmt->bindParam(":email", $email);
 		$stmt->bindParam(":userid", $userId);
 		//Return true on success else false
@@ -281,7 +281,7 @@ class DatabaseAccessor {
 	public function setUsername($userId, $username) {
 		//Transaction to check username validity and change if possible
 		if ($this->pdo->beginTransaction()) {
-			//Check if username is in use (case insensitive) (ensure database collation is case insensitive, not bin)
+			//Check if username is in use (case insensitive) (TODO: ensure database collation is case insensitive, not bin)
 			$stmt = $this->pdo->prepare("SELECT `username` FROM `usernames` WHERE `username` = :username LIMIT 1");
 			$stmt->bindParam(":username", $username);
 			$stmt->execute();
@@ -292,7 +292,7 @@ class DatabaseAccessor {
 			}
 			//Add username to usernames table and get current username of user
 			$stmt2 = $this->pdo->prepare("INSERT INTO `usernames` (`username`) VALUES (:username)");
-			$stmt3 = $this->pdo->prepare("SELECT `username` FROM `users` WHERE `userid` = :userid LIMIT 1");
+			$stmt3 = $this->pdo->prepare("SELECT `username` FROM `users` WHERE `userid` = :userid AND `status` != 0 LIMIT 1");
 			$stmt2->bindParam(":username", $username);
 			$stmt3->bindParam(":userid", $userId);
 			if (!$stmt2->execute()) {
@@ -435,7 +435,7 @@ class DatabaseAccessor {
 	
 	//Update existing MOC, used in moc.php
 	public function updateMoc($mocId, $mocTitle, $mocText, $mocThumb, $mocPrivacy, $mocFilter) {
-		$stmt = $this->pdo->prepare("UPDATE `mocs` SET `title` = :title, `thumbnail` = :thumbnail, `content` = :content, `privacy` = :privacy, `filter` = :filter, `lastedit` = NOW() WHERE `mocid` = :mocid");
+		$stmt = $this->pdo->prepare("UPDATE `mocs` SET `title` = :title, `thumbnail` = :thumbnail, `content` = :content, `privacy` = :privacy, `filter` = :filter, `lastedit` = NOW() WHERE `mocid` = :mocid AND `status` != 0");
 		$stmt->bindParam(":title", $mocTitle);
 		$stmt->bindParam(":thumbnail", $mocThumb);
 		$stmt->bindParam(":content", $mocText);
@@ -464,7 +464,7 @@ class DatabaseAccessor {
 	//Get the user id of the user that posted a MOC, used in moc.php
 	//Return null if moc does not exist or on error
 	public function getMocCreator($mocId) {
-		$stmt = $this->pdo->prepare("SELECT `userid` FROM `mocs` WHERE `mocid` = :mocid");
+		$stmt = $this->pdo->prepare("SELECT `userid` FROM `mocs` WHERE `mocid` = :mocid AND `status` != 0");
 		$stmt->bindParam(":mocid", $mocId);
 		if ($stmt->execute()) {
 			if ($row = $stmt->fetch()) {
@@ -545,7 +545,7 @@ class DatabaseAccessor {
 	
 	//Edit a comment on a MOC, used in moc.php
 	public function editMocComment($commentId, $commentText) {
-		$stmt = $this->pdo->prepare("UPDATE `moccomments` SET `content` = :content, `lastedit` = NOW() WHERE `commentid` = :commentid");
+		$stmt = $this->pdo->prepare("UPDATE `moccomments` SET `content` = :content, `lastedit` = NOW() WHERE `commentid` = :commentid AND `status` != 0");
 		$stmt->bindParam(":content", $commentText);
 		$stmt->bindParam(":commentid", $commentId);
 		if ($stmt->execute()) {
@@ -569,7 +569,7 @@ class DatabaseAccessor {
 	
 	//Get the userid of the creator of a comment on a MOC, used in moc.php
 	public function getMocCommentCreator($commentId) {
-		$stmt = $this->pdo->prepare("SELECT `userid` FROM `moccomments` WHERE `commentid` = :commentid");
+		$stmt = $this->pdo->prepare("SELECT `userid` FROM `moccomments` WHERE `commentid` = :commentid AND `status` != 0");
 		$stmt->bindParam(":commentid", $commentId);
 		if ($stmt->execute()) {
 			if ($row = $stmt->fetch()) {
