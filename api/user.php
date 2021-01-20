@@ -319,6 +319,23 @@ function deleteAccount($password) {
 	//TODO - Decide account deletion strategy
 	//Delete from certain tables like session table, add comments/mocs to deleted user, delete user?
 	//Or delete everything?
+	//This implementation just updates the username and email, clears sessions, and sets user status to 0 - mocs and comments will still remain
+	//Verify user is logged in
+	$userId = authenticate();
+	if ($userId === null) {
+		return errorBuilder("You must be logged in to delete your account");
+	}
+	//Verify password is correct
+	$db = new DatabaseAccessor();
+	if (!$db->verifyPassword($userId, $password)) {
+		return errorBuilder("The password is not correct");
+	}
+	//Delete account
+	$result = $db->deleteUser($userId);
+	if ($result->error) {
+		return errorBuilder($result->message);
+	}
+	return resultBuilder("Account successfully deleted");
 }
 
 function changeEmail($password, $newEmail) {

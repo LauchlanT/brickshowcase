@@ -4,7 +4,7 @@
 	ini_set('display_startup_errors', 1);
 	error_reporting(E_ALL);*/
 	
-	//Adjust this between staging and main
+	//Adjust this between staging and main TODO change to constant
 	global $configRootDomain;
 	$configRootDomain = "brickshowcase.com";
 ?>
