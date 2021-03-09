@@ -582,4 +582,25 @@ class DatabaseAccessor {
 		}
 	}
 	
+	public function getUser($userId) {
+		//Find user by email
+		$stmt = $this->pdo->prepare("SELECT * FROM `users` WHERE `userid` = :userid AND `status` != 0 LIMIT 1");
+		$stmt->bindParam(":userid", $userId);
+		$stmt->execute();
+		//Build user object, omitting password and email
+		//Return user object, or null if not found
+		if ($row = $stmt->fetch()) {
+			$user = new User();
+			$user->userId = $row['userid'];
+			$user->username = $row['username'];
+			$user->usericon = $row['usericon'];
+			$user->description = $row['description'];
+			$user->joindate = $row['joindate'];
+			$user->status = $row['status'];
+			return $user;
+		} else {
+			return null;
+		}
+	}
+	
 }

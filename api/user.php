@@ -17,6 +17,10 @@ function resultBuilder($message) {
 	return '{"result":"'.$message.'", "error":null}';
 }
 
+//Encode a User object as a JSON string for public use
+function userEncode($user) {
+	return '"{ "userId":"'.$user->userId.'", "username":"'.$user->username.'", "userIcon:"'.$user->userIcon.'", "description":"'.$user->description.'", "joinDate":"'.$user->joinDate.'" }';
+}
 
 function login($email, $password) {
 	//Verify that user isn't already logged in
@@ -465,6 +469,24 @@ function changeUsername($password, $newUsername) {
 	return resultBuilder("Username updated successfully!");
 }
 
+function getUser($userId) {
+	$db = new DatabaseAccessor();
+	$userInfo = $db->getUser($userId);
+	if ($userInfo == null) {
+		return errorBuilder("This user could not be found");
+	} else if ($userInfo->status == 0) {
+		return resultBuilder("This user's account has been deleted");
+	} else if ($userInfo->status == 1) {
+		return resultBuilder(userEncode($userInfo));
+	} else if ($userInfo->status == 2) {
+		return resultBuilder("This user's account is pending verification");
+	} else if ($userInfo->status == 3) {
+		return resultBuilder("This user's account has been flagged for review");
+	} else {
+		return resultBuilder("This user's account is not available");
+	}
+}
+
 //Parse input JSON and pass to appropriate functions
 //Return the return value of the function called, or JSON of error
 function parseJSON($json) {
@@ -579,6 +601,13 @@ function parseJSON($json) {
 				return '{"result":null, "error":"Password and new username must be sent to change username"}';
 			}
 			break;
+		
+		case "getUser":
+			if (isset($data->userId)) {
+				return getUser($data->userId);
+			} else {
+				return '{"result":null, "error":"userId for user must be specified"}';
+			}
 			
 		default:
 			return '{"result":null, "error":"Requested endpoint does not exist"}';
