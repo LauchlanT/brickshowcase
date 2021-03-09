@@ -24,7 +24,7 @@ function resultJSONBuilder($jsonMessage) {
 
 //Encode a User object as a JSON string for public use
 function userEncode($user) {
-	return '"{ "userId":"'.$user->userId.'", "username":"'.$user->username.'", "userIcon:"'.$user->userIcon.'", "description":"'.$user->description.'", "joinDate":"'.$user->joinDate.'" }';
+	return '{ "userId":"'.$user->userId.'", "username":"'.$user->username.'", "userIcon":"'.$user->userIcon.'", "description":"'.$user->description.'", "joinDate":"'.$user->joinDate.'" }';
 }
 
 function login($email, $password) {

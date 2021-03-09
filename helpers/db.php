@@ -593,7 +593,7 @@ class DatabaseAccessor {
 			$user = new User();
 			$user->userId = $row['userid'];
 			$user->username = $row['username'];
-			$user->usericon = $row['usericon'];
+			$user->userIcon = $row['usericon'];
 			$user->description = $row['description'];
 			$user->joinDate = $row['joindate'];
 			$user->status = $row['status'];
