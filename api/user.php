@@ -17,6 +17,11 @@ function resultBuilder($message) {
 	return '{"result":"'.$message.'", "error":null}';
 }
 
+//Same as resultBuilder, but expects JSON child rather than string
+function resultJSONBuilder($jsonMessage) {
+	return '{"result":'.$jsonMessage.', "error":null}';
+}
+
 //Encode a User object as a JSON string for public use
 function userEncode($user) {
 	return '"{ "userId":"'.$user->userId.'", "username":"'.$user->username.'", "userIcon:"'.$user->userIcon.'", "description":"'.$user->description.'", "joinDate":"'.$user->joinDate.'" }';
@@ -477,7 +482,7 @@ function getUser($userId) {
 	} else if ($userInfo->status == 0) {
 		return resultBuilder("This user's account has been deleted");
 	} else if ($userInfo->status == 1) {
-		return resultBuilder(userEncode($userInfo));
+		return resultJSONBuilder(userEncode($userInfo));
 	} else if ($userInfo->status == 2) {
 		return resultBuilder("This user's account is pending verification");
 	} else if ($userInfo->status == 3) {

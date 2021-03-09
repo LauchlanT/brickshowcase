@@ -595,7 +595,7 @@ class DatabaseAccessor {
 			$user->username = $row['username'];
 			$user->usericon = $row['usericon'];
 			$user->description = $row['description'];
-			$user->joindate = $row['joindate'];
+			$user->joinDate = $row['joindate'];
 			$user->status = $row['status'];
 			return $user;
 		} else {
