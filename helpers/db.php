@@ -632,15 +632,15 @@ class DatabaseAccessor {
 	//Find users matching search params, used in user.php
 	public function searchUsers($sortType, $timeframe, $sortOrder, $searchTerm, $limit, $offset) {
 		//Build base query segments
-		$querySelect = "`u.userid`, `u.username`, `u.usericon`, `u.description`, `u.joindate`, `u.status`, COUNT(`m.mocid`) as mocs";
+		$querySelect = "u.`userid`, u.`username`, u.`usericon`, u.`description`, u.`joindate`, u.`status`, COUNT(m.`mocid`) as mocs";
 		$queryTable = "`users` u LEFT JOIN `mocs` m USING (`userid`)";
-		$queryGroup = "`u.userid`";
+		$queryGroup = "u.`userid`";
 		//Build order by clause
 		$queryOrder = "";
 		if ($sortType == "name") {
-			$queryOrder = "`u.username`";
+			$queryOrder = "u.`username`";
 		} else if ($sortType == "date") {
-			$queryOrder = "`u.joindate`";
+			$queryOrder = "u.`joindate`";
 		} else if ($sortType == "mocnumber") {
 			$queryOrder = "`mocs`";
 		}
@@ -651,19 +651,19 @@ class DatabaseAccessor {
 		$queryWhere = "";
 		switch ($timeframe) {
 			case "hour":
-				$queryWhere = "`u.joindate` > DATE_SUB(NOW(), INTERVAL 1 HOUR) AND (`m.postdate` > DATE_SUB(NOW(), INTERVAL 1 HOUR) OR `m.postdate` IS NULL)";
+				$queryWhere = "u.`joindate` > DATE_SUB(NOW(), INTERVAL 1 HOUR) AND (m.`postdate` > DATE_SUB(NOW(), INTERVAL 1 HOUR) OR m.`postdate` IS NULL)";
 				break;
 			case "day":
-				$queryWhere = "`u.joindate` > DATE_SUB(NOW(), INTERVAL 1 DAY) AND (`m.postdate` > DATE_SUB(NOW(), INTERVAL 1 DAY) OR `m.postdate` IS NULL)";
+				$queryWhere = "u.`joindate` > DATE_SUB(NOW(), INTERVAL 1 DAY) AND (m.`postdate` > DATE_SUB(NOW(), INTERVAL 1 DAY) OR m.`postdate` IS NULL)";
 				break;
 			case "week":
-				$queryWhere = "`u.joindate` > DATE_SUB(NOW(), INTERVAL 7 DAY) AND (`m.postdate` > DATE_SUB(NOW(), INTERVAL 7 DAY) OR `m.postdate` IS NULL)";
+				$queryWhere = "u.`joindate` > DATE_SUB(NOW(), INTERVAL 7 DAY) AND (m.`postdate` > DATE_SUB(NOW(), INTERVAL 7 DAY) OR m.`postdate` IS NULL)";
 				break;
 			case "month":
-				$queryWhere = "`u.joindate` > DATE_SUB(NOW(), INTERVAL 1 MONTH) AND (`m.postdate` > DATE_SUB(NOW(), INTERVAL 1 MONTH) OR `m.postdate` IS NULL)";
+				$queryWhere = "u.`joindate` > DATE_SUB(NOW(), INTERVAL 1 MONTH) AND (m.`postdate` > DATE_SUB(NOW(), INTERVAL 1 MONTH) OR m.`postdate` IS NULL)";
 				break;
 			case "year":
-				$queryWhere = "`u.joindate` > DATE_SUB(NOW(), INTERVAL 1 YEAR) AND (`m.postdate` > DATE_SUB(NOW(), INTERVAL 1 YEAR) OR `m.postdate` IS NULL)";
+				$queryWhere = "u.`joindate` > DATE_SUB(NOW(), INTERVAL 1 YEAR) AND (m.`postdate` > DATE_SUB(NOW(), INTERVAL 1 YEAR) OR m.`postdate` IS NULL)";
 				break;
 			case "all":
 				$queryWhere = "";
@@ -675,14 +675,14 @@ class DatabaseAccessor {
 			if ($queryWhere != "") {
 				$queryWhere .= " AND ";
 			}
-			$queryWhere .= "`u.username` LIKE '%:searchterm%'";
+			$queryWhere .= "u.`username` LIKE '%:searchterm%'";
 		}
 		//Only have approved users show up in search results
 		//TODO: This may get messed up as additional statuses are added
 		if ($queryWhere != "") {
-			$queryWhere .= " AND `u.status` = 1";
+			$queryWhere .= " AND u.`status` = 1";
 		} else {
-			$queryWhere .= " `u.status` = 1";
+			$queryWhere .= " u.`status` = 1";
 		}
 		//Build limit and offset
 		$queryLimit = "";
@@ -694,7 +694,7 @@ class DatabaseAccessor {
 			$queryOffset = ":offset";
 		}
 		//Build overall query string
-		$query = $this->queryBuilder($querySelect, $queryTable, $queryWhere, $queryGroup, $queryLimit, $queryOffset);
+		$query = $this->queryBuilder($querySelect, $queryTable, $queryWhere, $queryGroup, "", $queryOrder, $queryLimit, $queryOffset);
 		//Bind parameters
 		$stmt = $this->pdo->prepare($query);
 		if ($searchTerm != null && $searchTerm != "") {

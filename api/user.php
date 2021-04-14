@@ -493,7 +493,7 @@ function getUser($userId) {
 }
 
 function searchUsers($sortType, $timeframe, $sortOrder, $searchTerm, $limit, $offset) {
-	if ($sortType != "date" && $sortType != "name" && sortType != "mocnumber") {
+	if ($sortType != "date" && $sortType != "name" && $sortType != "mocnumber") {
 		return errorBuilder("Invalid sort type");
 	}
 	if ($timeframe != "hour" && $timeframe != "day" && $timeframe != "week" && $timeframe != "month" && $timeframe != "year" && $timeframe != "all") {
@@ -508,7 +508,7 @@ function searchUsers($sortType, $timeframe, $sortOrder, $searchTerm, $limit, $of
 		$offset = null;
 	}
 	$db = new DatabaseAccessor();
-	$users = $db->searchUsers($sortType, $timeframe, $sortOrder, $searchTerm, $offset);
+	$users = $db->searchUsers($sortType, $timeframe, $sortOrder, $searchTerm, $limit, $offset);
 	if ($users == null || count($users) == 0) {
 		return resultJSONBuilder("[]");
 	} else {
