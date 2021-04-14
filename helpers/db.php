@@ -52,6 +52,7 @@ class User {
 	public $description;
 	public $joinDate;
 	public $status;
+	public $mocs;
 	
 	public function __construct() {
 		//Empty constructor, fill fields manually as not all are always needed
@@ -67,6 +68,30 @@ class DatabaseAccessor {
 	public function __construct() {
 		include_once("connection.php");
 		$this->pdo = new PDO($dbdsn, $dbuser, $dbpass, $dbopt);
+	}
+	
+	//Create a query from multiple strings, helper function
+	public function queryBuilder($select, $table, $where, $group, $having, $order, $limit, $offset) {
+		$query = "SELECT $select FROM $table";
+		if ($where != "") {
+			$query .= " WHERE $where";
+		}
+		if ($group != "") {
+			$query .= " GROUP BY $group";
+		}
+		if ($having != "") {
+			$query .= " HAVING $having";
+		}
+		if ($order != "") {
+			$query .= " ORDER BY $order";
+		}
+		if ($limit != "") {
+			$query .= " LIMIT $limit";
+		}
+		if ($offset != "") {
+			$query .= " OFFSET $offset";
+		}
+		return $query;
 	}
 	
 	//Create a new session, used in user.php
@@ -582,8 +607,9 @@ class DatabaseAccessor {
 		}
 	}
 	
+	//Get a user by ID, used in user.php
 	public function getUser($userId) {
-		//Find user by email
+		//Find user by ID
 		$stmt = $this->pdo->prepare("SELECT * FROM `users` WHERE `userid` = :userid AND `status` != 0 LIMIT 1");
 		$stmt->bindParam(":userid", $userId);
 		$stmt->execute();
@@ -601,6 +627,99 @@ class DatabaseAccessor {
 		} else {
 			return null;
 		}
+	}
+	
+	//Find users matching search params, used in user.php
+	public function searchUsers($sortType, $timeframe, $sortOrder, $searchTerm, $limit, $offset) {
+		//Build base query segments
+		$querySelect = "`u.userid`, `u.username`, `u.usericon`, `u.description`, `u.joindate`, `u.status`, COUNT(`m.mocid`) as mocs";
+		$queryTable = "`users` u LEFT JOIN `mocs` m USING (`userid`)";
+		$queryGroup = "`u.userid`";
+		//Build order by clause
+		$queryOrder = "";
+		if ($sortType == "name") {
+			$queryOrder = "`u.username`";
+		} else if ($sortType == "date") {
+			$queryOrder = "`u.joindate`";
+		} else if ($sortType == "mocnumber") {
+			$queryOrder = "`mocs`";
+		}
+		if ($sortOrder == "desc") {
+			$queryOrder .= " DESC";
+		}
+		//Build where clause
+		$queryWhere = "";
+		switch ($timeframe) {
+			case "hour":
+				$queryWhere = "`u.joindate` > DATE_SUB(NOW(), INTERVAL 1 HOUR) AND (`m.postdate` > DATE_SUB(NOW(), INTERVAL 1 HOUR) OR `m.postdate` IS NULL)";
+				break;
+			case "day":
+				$queryWhere = "`u.joindate` > DATE_SUB(NOW(), INTERVAL 1 DAY) AND (`m.postdate` > DATE_SUB(NOW(), INTERVAL 1 DAY) OR `m.postdate` IS NULL)";
+				break;
+			case "week":
+				$queryWhere = "`u.joindate` > DATE_SUB(NOW(), INTERVAL 7 DAY) AND (`m.postdate` > DATE_SUB(NOW(), INTERVAL 7 DAY) OR `m.postdate` IS NULL)";
+				break;
+			case "month":
+				$queryWhere = "`u.joindate` > DATE_SUB(NOW(), INTERVAL 1 MONTH) AND (`m.postdate` > DATE_SUB(NOW(), INTERVAL 1 MONTH) OR `m.postdate` IS NULL)";
+				break;
+			case "year":
+				$queryWhere = "`u.joindate` > DATE_SUB(NOW(), INTERVAL 1 YEAR) AND (`m.postdate` > DATE_SUB(NOW(), INTERVAL 1 YEAR) OR `m.postdate` IS NULL)";
+				break;
+			case "all":
+				$queryWhere = "";
+				break;
+			default:
+				$queryWhere = "";
+		}
+		if ($searchTerm != null && $searchTerm != "") {
+			if ($queryWhere != "") {
+				$queryWhere .= " AND ";
+			}
+			$queryWhere .= "`u.username` LIKE '%:searchterm%'";
+		}
+		//Only have approved users show up in search results
+		//TODO: This may get messed up as additional statuses are added
+		if ($queryWhere != "") {
+			$queryWhere .= " AND `u.status` = 1";
+		} else {
+			$queryWhere .= " `u.status` = 1";
+		}
+		//Build limit and offset
+		$queryLimit = "";
+		if ($limit != null) {
+			$queryLimit = ":limit";
+		}
+		$queryOffset = "";
+		if ($queryOffset != null) {
+			$queryOffset = ":offset";
+		}
+		//Build overall query string
+		$query = $this->queryBuilder($querySelect, $queryTable, $queryWhere, $queryGroup, $queryLimit, $queryOffset);
+		//Bind parameters
+		$stmt = $this->pdo->prepare($query);
+		if ($searchTerm != null && $searchTerm != "") {
+			$stmt->bindParam(":searchterm", $searchTerm);
+		}
+		if ($limit != null) {
+			$stmt->bindParam(":limit", $limit);
+		}
+		if ($queryOffset != null) {
+			$stmt->bindParam(":offset", $offset);
+		}
+		$stmt->execute();
+		//Build user objects and return list
+		$users = array();
+		while ($row = $stmt->fetch()) {
+			$user = new User();
+			$user->userId = $row['userid'];
+			$user->username = $row['username'];
+			$user->userIcon = $row['usericon'];
+			$user->description = $row['description'];
+			$user->joinDate = $row['joindate'];
+			$user->mocs = $row['mocs'];
+			$users[] = $user;
+		}
+		return $users;
 	}
 	
 }

@@ -492,6 +492,37 @@ function getUser($userId) {
 	}
 }
 
+function searchUsers($sortType, $timeframe, $sortOrder, $searchTerm, $limit, $offset) {
+	if ($sortType != "date" && $sortType != "name" && sortType != "mocnumber") {
+		return errorBuilder("Invalid sort type");
+	}
+	if ($timeframe != "hour" && $timeframe != "day" && $timeframe != "week" && $timeframe != "month" && $timeframe != "year" && $timeframe != "all") {
+		return errorBuilder("Invalid timeframe");
+	}
+	if ($sortOrder != "asc" && $sortOrder != "desc") {
+		return errorBuilder("Invalid sort order");
+	}
+	if ($offset != null && is_numeric($offset) && (abs(intval($offset)-floatval($offset)) < 0.0001)) {
+		$offset = intval($offset);
+	} else {
+		$offset = null;
+	}
+	$db = new DatabaseAccessor();
+	$users = $db->searchUsers($sortType, $timeframe, $sortOrder, $searchTerm, $offset);
+	if ($users == null || count($users) == 0) {
+		return resultJSONBuilder("[]");
+	} else {
+		$userEncodings = "[";
+		$i = 0;
+		while ($i < (count($users)-1)) {
+			$userEncodings .= userEncode($users[$i]).",";
+			$i++;
+		}
+		$userEncodings .= userEncode($users[$i])."]";
+		return resultJSONBuilder($userEncodings);
+	}
+}
+
 //Parse input JSON and pass to appropriate functions
 //Return the return value of the function called, or JSON of error
 function parseJSON($json) {
@@ -613,6 +644,15 @@ function parseJSON($json) {
 			} else {
 				return '{"result":null, "error":"userId for user must be specified"}';
 			}
+			break;
+		
+		case "searchUsers":
+			if (isset($data->sortType) && isset($data->timeframe) && isset($data->sortOrder)) {
+				return searchUsers($data->sortType, $data->timeframe, $data->sortOrder, $data->searchTerm, 12, $data->offset);
+			} else {
+				return '{"result":null, "error":"Search sortType, timeframe, and sortOrder must be specified}';
+			}
+			break;
 			
 		default:
 			return '{"result":null, "error":"Requested endpoint does not exist"}';
