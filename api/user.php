@@ -24,7 +24,7 @@ function resultJSONBuilder($jsonMessage) {
 
 //Encode a User object as a JSON string for public use
 function userEncode($user) {
-	if ($user->mocs != null) {
+	if ($user->mocs !== null) {
 		return '{ "userId":"'.$user->userId.'", "username":"'.$user->username.'", "userIcon":"'.$user->userIcon.'", "description":"'.$user->description.'", "joinDate":"'.$user->joinDate.'", "mocs":'.$user->mocs.' }';
 	}	
 	return '{ "userId":"'.$user->userId.'", "username":"'.$user->username.'", "userIcon":"'.$user->userIcon.'", "description":"'.$user->description.'", "joinDate":"'.$user->joinDate.'" }';

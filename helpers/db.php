@@ -675,7 +675,7 @@ class DatabaseAccessor {
 			if ($queryWhere != "") {
 				$queryWhere .= " AND ";
 			}
-			$queryWhere .= "u.`username` LIKE '%:searchterm%'";
+			$queryWhere .= "u.`username` LIKE CONCAT('%', :searchterm, '%')";
 		}
 		//Only have approved users show up in search results
 		//TODO: This may get messed up as additional statuses are added
@@ -690,7 +690,7 @@ class DatabaseAccessor {
 			$queryLimit = ":limit";
 		}
 		$queryOffset = "";
-		if ($queryOffset != null) {
+		if ($offset != null) {
 			$queryOffset = ":offset";
 		}
 		//Build overall query string
